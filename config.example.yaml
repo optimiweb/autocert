@@ -1,0 +1,23 @@
+# Example configuration. Use real credentials in a private config.yaml file.
+domains:
+  - example.com
+  - www.example.com
+
+# Defaults to :80 when omitted.
+http_address: :80
+
+acme:
+  email: ops@example.com
+  # Omit for Let's Encrypt production. Use the staging URL while testing.
+  # directory_url: https://acme-staging-v02.api.letsencrypt.org/directory
+
+scaleway:
+  access_key: "${SCW_ACCESS_KEY}"
+  secret_key: "${SCW_SECRET_KEY}"
+  project_id: replace-with-scaleway-project-id
+  # Defaults to fr-par when omitted.
+  region: fr-par
+  # Optional customer-managed Scaleway Key Manager key ID.
+  # key_id: replace-with-key-manager-key-id
+  # Keep staging and production cache entries separate.
+  secret_prefix: autocert-staging

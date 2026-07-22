@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "autocert.fullname" . }}
+  labels:
+    {{- include "autocert.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    domains:
+    {{- range $domain := required "domains must contain at least one domain" .Values.domains }}
+      - {{ $domain | quote }}
+    {{- end }}
+    http_address: {{ printf ":%v" .Values.service.targetPort | quote }}
+    {{- if or .Values.acme.email .Values.acme.directoryURL }}
+    acme:
+      {{- with .Values.acme.email }}
+      email: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.acme.directoryURL }}
+      directory_url: {{ . | quote }}
+      {{- end }}
+    {{- else }}
+    acme: {}
+    {{- end }}
+    scaleway:
+      access_key: "${SCW_ACCESS_KEY}"
+      secret_key: "${SCW_SECRET_KEY}"
+      project_id: {{ required "scaleway.projectID is required" .Values.scaleway.projectID | quote }}
+      region: {{ .Values.scaleway.region | quote }}
+      {{- with .Values.scaleway.keyID }}
+      key_id: {{ . | quote }}
+      {{- end }}
+      secret_prefix: {{ .Values.scaleway.secretPrefix | quote }}

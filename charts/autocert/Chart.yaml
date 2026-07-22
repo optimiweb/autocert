@@ -1,0 +1,6 @@
+apiVersion: v2
+name: autocert
+description: ACME HTTP-01 certificate issuer backed by Scaleway Secret Manager
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

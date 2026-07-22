@@ -1,0 +1,60 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/optimiweb/autocert
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+domains: []
+
+acme:
+  email: ""
+  # Leave empty for Let's Encrypt production. Use the staging directory while testing.
+  directoryURL: ""
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
+  annotations: {}
+
+scaleway:
+  projectID: ""
+  region: fr-par
+  keyID: ""
+  secretPrefix: autocert-production
+  existingSecret:
+    # Required. The Secret must contain the API key values below.
+    name: ""
+    accessKeyKey: SCW_ACCESS_KEY
+    secretKeyKey: SCW_SECRET_KEY
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
