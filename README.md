@@ -10,6 +10,12 @@ Secret Manager. Secret Manager encrypts every version at rest. Set
 The service must be reachable by every requested domain on TCP port 80. Point
 each domain's DNS record to the service before starting it.
 
+If initial issuance fails, the process keeps serving HTTP-01 challenges and
+retries with a capped 30-second to five-minute backoff rather than crash-looping
+through ACME validation limits. Test DNS and routing with Let's Encrypt staging
+first. During shutdown, an ACME request already in progress can take up to
+autocert's internal five-minute timeout to return.
+
 Create a private `config.yaml` from the structure in `config.example.yaml`. The
 example uses `${SCW_ACCESS_KEY}` and `${SCW_SECRET_KEY}`, which are expanded
 from the process environment. Define those values in the ignored `.env` file
@@ -61,11 +67,38 @@ requires the configured domain and port 80 to be reachable by that CA.
 | `scaleway.region` | No | `fr-par` | Scaleway Secret Manager region. |
 | `scaleway.key_id` | No | | Customer-managed Scaleway Key Manager key ID for secret encryption. |
 | `scaleway.secret_prefix` | No | `autocert` | Prefix for deterministic Secret Manager secret names. |
+| `scaleway.secret_path` | No | `/autocert` | Secret Manager directory path for cache secrets. |
 
 `/healthz` returns `204 No Content`. All other non-ACME requests return `404`.
-The configuration parser rejects unknown YAML fields and expands `${VARIABLE}`
-references from the process environment. Both `.env` and `config.yaml` are
-ignored by Git; keep credentials in `.env` rather than committing them.
+The configuration parser rejects unknown YAML fields, validates domains and
+URLs, and expands `${VARIABLE}` references from the process environment. Both
+`.env` and `config.yaml` are ignored by Git; keep credentials in `.env` rather
+than committing them.
+Domains are normalized to lowercase ASCII/Punycode and trailing dots are
+removed. Set `LOG_LEVEL` to `DEBUG`, `INFO`, `WARN`, or `ERROR` to control JSON
+log verbosity.
+
+## Operations
+
+The process rechecks each configured certificate every 12 hours and logs
+certificate-check errors. Monitor certificate expiration independently as well:
+autocert's background renewal errors cannot be exposed directly through its API.
+The startup trigger requests autocert's default ECDSA cache entry; consumers that
+require an RSA cache entry must provision it separately.
+
+Each certificate update creates a Secret Manager version and disables the
+previous one. Disabled versions are retained, so monitor Secret Manager version
+quotas and apply a retention policy appropriate to your organization.
+
+## Package layout
+
+| Path | Responsibility |
+| --- | --- |
+| `cmd/autocert` | Process entrypoint |
+| `internal/config` | YAML loading and validation |
+| `internal/app` | HTTP-01 server lifecycle and ACME manager wiring |
+| `internal/cache` | Provider-agnostic `autocert.Cache` |
+| `internal/scaleway` | Scaleway Secret Manager adapter |
 
 ## Container and Kubernetes
 
@@ -78,16 +111,18 @@ docker build -f Containerfile -t autocert:local .
 The Helm chart is in `charts/autocert`. It creates a LoadBalancer Service on
 port 80, mounts the rendered YAML configuration, and reads Scaleway credentials
 from an existing Kubernetes Secret. See `charts/autocert/README.md` for the
-required values and installation commands. Keep the release at one replica
-during initial issuance and use a separate `scaleway.secretPrefix` for staging
-and production.
+required values and installation commands. The chart enforces `replicaCount: 1`,
+uses a `Recreate` strategy, and restarts pods when the generated config changes.
+Use a separate `scaleway.secretPrefix` for staging and production.
 
 ## Releases
 
-GitHub Actions tests Go code and validates the Helm chart for pull requests,
-pushes to `main`, and tags. Pushing a stable SemVer tag such as `v1.2.3` builds
-and publishes the image to `ghcr.io/optimiweb/autocert` with `1.2.3`, `1.2`,
-and `1` tags. Other `v*` tags fail the release validation and are not published.
+GitHub Actions runs Go tests with `-race`, builds the binary and container image,
+and validates the Helm chart for pull requests and pushes to `main`. Pushing a
+stable SemVer tag such as `v1.2.3` publishes the image to
+`ghcr.io/optimiweb/autocert` with `1.2.3`, `1.2`, and `1` tags. Other `v*` tags
+fail release validation and are not published. Release images support `linux/amd64`
+and `linux/arm64`.
 
 ## Future deployment targets
 

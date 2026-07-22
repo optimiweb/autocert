@@ -31,3 +31,4 @@ data:
       key_id: {{ . | quote }}
       {{- end }}
       secret_prefix: {{ .Values.scaleway.secretPrefix | quote }}
+      secret_path: {{ .Values.scaleway.secretPath | quote }}

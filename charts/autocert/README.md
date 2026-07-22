@@ -40,9 +40,16 @@ helm upgrade --install autocert ./charts/autocert -f values.yaml
 ```
 
 Point every configured domain to the LoadBalancer address before the issuer
-starts. Keep `replicaCount` at `1` during initial issuance. Use a different
-`scaleway.secretPrefix` and omit `acme.directoryURL` for production, so a
-staging certificate cannot be read from the production cache.
+starts. The chart rejects `replicaCount` greater than `1` and uses a `Recreate`
+strategy so two issuers cannot race ACME or Secret Manager writes. Use a
+different `scaleway.secretPrefix` and omit `acme.directoryURL` for production,
+so a staging certificate cannot be read from the production cache.
+
+The process stays up and retries failed initial issuance with capped backoff,
+which avoids Kubernetes crash loops consuming ACME validation limits. It logs
+periodic certificate-check failures, but certificate expiration should also be
+monitored externally. Secret Manager retains disabled cache versions, so monitor
+the service's version quota and configure retention according to your policy.
 
 The Secret must contain keys named `SCW_ACCESS_KEY` and `SCW_SECRET_KEY` by
 default. Set `scaleway.existingSecret.accessKeyKey` and

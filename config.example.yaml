@@ -21,3 +21,5 @@ scaleway:
   # key_id: replace-with-key-manager-key-id
   # Keep staging and production cache entries separate.
   secret_prefix: autocert-staging
+  # Defaults to /autocert when omitted.
+  secret_path: /autocert

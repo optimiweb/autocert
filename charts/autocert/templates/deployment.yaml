@@ -1,3 +1,6 @@
+{{- if gt (int .Values.replicaCount) 1 }}
+{{- fail "replicaCount must be 1; concurrent issuers are unsafe for ACME HTTP-01" }}
+{{- end }}
 {{- $secretName := required "scaleway.existingSecret.name is required" .Values.scaleway.existingSecret.name }}
 apiVersion: apps/v1
 kind: Deployment
@@ -7,15 +10,18 @@ metadata:
     {{- include "autocert.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "autocert.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with omit .Values.podAnnotations "checksum/config" }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "autocert.selectorLabels" . | nindent 8 }}
     spec:

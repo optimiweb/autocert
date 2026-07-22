@@ -1,3 +1,4 @@
+# Must remain 1. Concurrent replicas race ACME issuance and Secret Manager writes.
 replicaCount: 1
 
 image:
@@ -27,6 +28,7 @@ scaleway:
   region: fr-par
   keyID: ""
   secretPrefix: autocert-production
+  secretPath: /autocert
   existingSecret:
     # Required. The Secret must contain the API key values below.
     name: ""
@@ -36,9 +38,9 @@ scaleway:
 resources:
   requests:
     cpu: 50m
-    memory: 64Mi
-  limits:
     memory: 128Mi
+  limits:
+    memory: 256Mi
 
 podAnnotations: {}
 podSecurityContext:
