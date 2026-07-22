@@ -1,0 +1,36 @@
+image:
+  repository: rg.fr-par.scw.cloud/optimi/autocert
+  tag: "0.1.0-stage"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: regcred
+
+domains:
+  - stage-autocert.optimicdn.tech
+
+acme:
+  email: ops@optimicdn.tech
+  directoryURL: https://acme-staging-v02.api.letsencrypt.org/directory
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
+
+scaleway:
+  projectID: "943031a5-cc3c-4202-aea1-697e4e55863c"
+  region: fr-par
+  secretPrefix: autocert-staging
+  secretPath: /autocert
+  existingSecret:
+    name: autocert-scaleway
+    accessKeyKey: SCW_ACCESS_KEY
+    secretKeyKey: SCW_SECRET_KEY
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
