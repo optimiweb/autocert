@@ -82,6 +82,13 @@ required values and installation commands. Keep the release at one replica
 during initial issuance and use a separate `scaleway.secretPrefix` for staging
 and production.
 
+## Releases
+
+GitHub Actions tests Go code and validates the Helm chart for pull requests,
+pushes to `main`, and tags. Pushing a stable SemVer tag such as `v1.2.3` builds
+and publishes the image to `ghcr.io/optimiweb/autocert` with `1.2.3`, `1.2`,
+and `1` tags. Other `v*` tags fail the release validation and are not published.
+
 ## Future deployment targets
 
 The issued PEM material remains in the autocert cache entries in Secret Manager.
