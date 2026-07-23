@@ -87,14 +87,15 @@ func (s *Store) Read(ctx context.Context, id string) ([]byte, error) {
 	return version.Data, nil
 }
 
-func (s *Store) Create(ctx context.Context, name string) (string, error) {
+func (s *Store) Create(ctx context.Context, meta cache.SecretMeta) (string, error) {
 	path := s.path
 	request := &secret.CreateSecretRequest{
 		Region:    s.region,
 		ProjectID: s.projectID,
-		Name:      name,
+		Name:      meta.Name,
 		Path:      &path,
 		Tags:      []string{"autocert"},
+		Type:      toScalewayType(meta.Type),
 	}
 	if s.keyID != "" {
 		request.KeyID = &s.keyID
@@ -103,7 +104,7 @@ func (s *Store) Create(ctx context.Context, name string) (string, error) {
 	if err == nil {
 		return created.ID, nil
 	}
-	if id, findErr := s.Find(ctx, name); findErr == nil {
+	if id, findErr := s.Find(ctx, meta.Name); findErr == nil {
 		return id, nil
 	}
 	return "", err
@@ -150,3 +151,10 @@ func IsNotFound(err error) bool {
 
 // Ensure Store satisfies cache.Store at compile time.
 var _ cache.Store = (*Store)(nil)
+
+func toScalewayType(t cache.SecretType) secret.SecretType {
+	if t == cache.SecretTypeCertificate {
+		return secret.SecretTypeCertificate
+	}
+	return secret.SecretTypeOpaque
+}

@@ -61,6 +61,42 @@ func TestCacheGetMiss(t *testing.T) {
 	}
 }
 
+func TestMeta(t *testing.T) {
+	c := cache.New(newMemoryStore(), "autocert-staging")
+	for _, tc := range []struct {
+		key     string
+		wantName string
+		wantType cache.SecretType
+	}{
+		{"acme_account+key", "autocert-staging-account-key", cache.SecretTypeOpaque},
+		{"acme_account.key", "autocert-staging-account-key", cache.SecretTypeOpaque},
+		{"stage-autocert.optimicdn.tech", "autocert-staging-cert-stage-autocert-optimicdn-tech", cache.SecretTypeCertificate},
+		{"example.com+rsa", "autocert-staging-cert-example-com-rsa", cache.SecretTypeCertificate},
+		{"example.com+token", "autocert-staging-alpn-example-com", cache.SecretTypeCertificate},
+	} {
+		t.Run(tc.key, func(t *testing.T) {
+			meta := c.Meta(tc.key)
+			if meta.Name != tc.wantName {
+				t.Fatalf("name = %q, want %q", meta.Name, tc.wantName)
+			}
+			if meta.Type != tc.wantType {
+				t.Fatalf("type = %q, want %q", meta.Type, tc.wantType)
+			}
+		})
+	}
+}
+
+func TestMetaHTTP01(t *testing.T) {
+	c := cache.New(newMemoryStore(), "autocert-staging")
+	meta := c.Meta("LoqXcYV8q5ONbJQbDM5t1YOFj1oGAAJxIRoyaHZBMwU+http-01")
+	if meta.Type != cache.SecretTypeOpaque {
+		t.Fatalf("type = %q, want opaque", meta.Type)
+	}
+	if len(meta.Name) <= len("autocert-staging-http01-") {
+		t.Fatalf("name = %q too short", meta.Name)
+	}
+}
+
 type memoryStore struct {
 	items map[string][]byte
 	names map[string]string
@@ -86,9 +122,9 @@ func (s *memoryStore) Read(_ context.Context, id string) ([]byte, error) {
 	return append([]byte(nil), data...), nil
 }
 
-func (s *memoryStore) Create(_ context.Context, name string) (string, error) {
-	id := name
-	s.names[name] = id
+func (s *memoryStore) Create(_ context.Context, meta cache.SecretMeta) (string, error) {
+	id := meta.Name
+	s.names[meta.Name] = id
 	return id, nil
 }
 

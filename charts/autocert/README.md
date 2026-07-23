@@ -51,6 +51,11 @@ periodic certificate-check failures, but certificate expiration should also be
 monitored externally. Secret Manager retains disabled cache versions, so monitor
 the service's version quota and configure retention according to your policy.
 
+Secret Manager entries use readable names and typed payloads:
+`<prefix>-account-key` (opaque), `<prefix>-cert-<domain>` (certificate), and
+`<prefix>-http01-<hash>` (opaque). Use a distinct `scaleway.secretPrefix` for
+staging and production.
+
 The Secret must contain keys named `SCW_ACCESS_KEY` and `SCW_SECRET_KEY` by
 default. Set `scaleway.existingSecret.accessKeyKey` and
 `scaleway.existingSecret.secretKeyKey` when using different key names.

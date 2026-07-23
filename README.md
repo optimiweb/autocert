@@ -90,6 +90,20 @@ Each certificate update creates a Secret Manager version and disables the
 previous one. Disabled versions are retained, so monitor Secret Manager version
 quotas and apply a retention policy appropriate to your organization.
 
+Scaleway Secret Manager secrets are created with human-readable names and typed
+to match their contents:
+
+| Cache key | Secret name | Scaleway type |
+| --- | --- | --- |
+| `acme_account+key` | `<prefix>-account-key` | `opaque` |
+| `<domain>` | `<prefix>-cert-<sanitized-domain>` | `certificate` |
+| `<domain>+rsa` | `<prefix>-cert-<sanitized-domain>-rsa` | `certificate` |
+| `<token>+http-01` | `<prefix>-http01-<short-hash>` | `opaque` |
+
+Domain names are sanitized by lowercasing and replacing non-alphanumeric
+characters with `-`. Use a distinct `scaleway.secretPrefix` for staging and
+production so the same domain's cert and account entries do not collide.
+
 ### Import into Fastly
 
 `certctl` reads the active ECDSA certificate cache entry for a configured domain,

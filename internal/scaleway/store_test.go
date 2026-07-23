@@ -105,7 +105,10 @@ func TestStoreCreateUsesConfiguredPath(t *testing.T) {
 			KeyID:      "key",
 		},
 	})
-	id, err := store.Create(context.Background(), "secret-name")
+	id, err := store.Create(context.Background(), cache.SecretMeta{
+		Name: "secret-name",
+		Type: cache.SecretTypeOpaque,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,6 +120,37 @@ func TestStoreCreateUsesConfiguredPath(t *testing.T) {
 	}
 	if api.createReq.KeyID == nil || *api.createReq.KeyID != "key" {
 		t.Fatalf("create key = %+v", api.createReq.KeyID)
+	}
+}
+
+func TestStoreCreateSetsType(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		in       cache.SecretType
+		want     secret.SecretType
+	}{
+		{"opaque", cache.SecretTypeOpaque, secret.SecretTypeOpaque},
+		{"certificate", cache.SecretTypeCertificate, secret.SecretTypeCertificate},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			api := &fakeSecretAPI{}
+			store := scaleway.NewStore(api, config.Config{
+				Scaleway: config.ScalewayConfig{
+					ProjectID:  "project",
+					Region:     scw.RegionFrPar,
+					SecretPath: "/autocert",
+				},
+			})
+			if _, err := store.Create(context.Background(), cache.SecretMeta{
+				Name: "secret-name",
+				Type: tc.in,
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if api.createReq == nil || api.createReq.Type != tc.want {
+				t.Fatalf("type = %v, want %v", api.createReq, tc.want)
+			}
+		})
 	}
 }
 
