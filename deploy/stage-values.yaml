@@ -1,6 +1,6 @@
 image:
   repository: rg.fr-par.scw.cloud/optimi/autocert
-  tag: "0.1.0-stage"
+  tag: "0.2.0-stage"
   pullPolicy: Always
 
 imagePullSecrets:
@@ -8,10 +8,13 @@ imagePullSecrets:
 
 domains:
   - stage-autocert.optimicdn.tech
+  - dummy.optimicdn.tech
+  - cdn-creatives.adikteev.com
 
 acme:
   email: ops@optimicdn.tech
-  directoryURL: https://acme-staging-v02.api.letsencrypt.org/directory
+  # Empty directoryURL uses the Let's Encrypt production directory.
+  directoryURL: ""
 
 service:
   type: LoadBalancer
@@ -21,7 +24,7 @@ service:
 scaleway:
   projectID: "943031a5-cc3c-4202-aea1-697e4e55863c"
   region: fr-par
-  secretPrefix: autocert-staging
+  secretPrefix: autocert-production
   secretPath: /autocert
   existingSecret:
     name: autocert-scaleway
