@@ -9,7 +9,6 @@ imagePullSecrets:
 domains:
   - stage-autocert.optimicdn.tech
   - dummy.optimicdn.tech
-  - cdn-creatives.adikteev.com
 
 acme:
   email: ops@optimicdn.tech
