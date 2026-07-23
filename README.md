@@ -90,6 +90,23 @@ Each certificate update creates a Secret Manager version and disables the
 previous one. Disabled versions are retained, so monitor Secret Manager version
 quotas and apply a retention policy appropriate to your organization.
 
+### Import into Fastly
+
+`certctl` reads the active ECDSA certificate cache entry for a configured domain,
+separates its private key and full PEM certificate chain, and imports both into
+the Fastly TLS Certificates API. It never writes PEM material to disk or logs it.
+
+The Fastly token needs permission to create TLS certificates. Set it in the
+environment and use the same configuration file as the issuer:
+
+```sh
+FASTLY_API_TOKEN=replace-with-fastly-token \
+  go run ./cmd/certctl --config config.yaml --domain example.com
+```
+
+The command only accepts domains in `domains` and imports the default ECDSA
+entry. Run it after initial issuance and after renewals to keep Fastly current.
+
 ## Package layout
 
 | Path | Responsibility |
@@ -127,5 +144,5 @@ and `linux/arm64`.
 ## Future deployment targets
 
 The issued PEM material remains in the autocert cache entries in Secret Manager.
-Deployment adapters for Cloudflare and Fastly can read these entries through the
-same cache contract without changing ACME issuance.
+Deployment adapters for Cloudflare can read these entries through the same cache
+contract without changing ACME issuance.
